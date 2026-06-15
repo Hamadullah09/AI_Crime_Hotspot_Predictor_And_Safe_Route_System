@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Crime Hotspot Predictor & Safe Route System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="page-noise"></div>
+
+    <main class="command-shell">
+        <section class="hero-strip panel">
+            <div class="hero-main">
+                <p class="eyebrow">Crime Intelligence Map UI</p>
+                <h1>AI Crime Hotspot Predictor &amp; Safe Route System</h1>
+                <p class="hero-copy">
+                    A live-style urban safety dashboard for route analysis, hotspot monitoring,
+                    and safer path recommendations using AI-inspired scoring and A* route logic.
+                </p>
+            </div>
+
+            <div class="hero-stats">
+                <article class="stat-chip">
+                    <span class="stat-label">Coverage</span>
+                    <strong id="coverage-count">Loading...</strong>
+                </article>
+                <article class="stat-chip">
+                    <span class="stat-label">Incident Base</span>
+                    <strong id="incident-count">Loading...</strong>
+                </article>
+                <article class="stat-chip">
+                    <span class="stat-label">Engine</span>
+                    <strong>A* Routing</strong>
+                </article>
+                <article class="stat-chip">
+                    <span class="stat-label">Models</span>
+                    <strong>DT + KNN + Bayes</strong>
+                </article>
+            </div>
+        </section>
+
+        <section class="top-grid">
+            <aside class="input-panel panel">
+                <div class="section-heading">
+                    <p class="section-kicker">Mission Control</p>
+                    <h2>Launch route analysis</h2>
+                </div>
+
+                <form id="route-form" class="route-form">
+                    <label class="field">
+                        <span>Start location</span>
+                        <select id="start" name="start" required>
+                            <option value="">Select start location</option>
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Destination</span>
+                        <select id="destination" name="destination" required>
+                            <option value="">Select destination</option>
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Travel time</span>
+                        <select id="time" name="time" required>
+                            <option value="day">Day</option>
+                            <option value="night">Night</option>
+                        </select>
+                    </label>
+
+                    <button type="submit" id="submit-button">Analyze Route</button>
+                </form>
+
+                <div class="status-block">
+                    <span class="pulse-dot"></span>
+                    <p id="status-message">System ready for route analysis.</p>
+                </div>
+
+                <div class="trip-summary">
+                    <p class="section-kicker">Journey Summary</p>
+                    <p id="journey-summary">
+                        Select locations and run analysis to generate a live intelligence report.
+                    </p>
+                </div>
+            </aside>
+
+            <section id="map-panel" class="map-panel panel">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">City Threat Map</p>
+                        <h2>Operational route board</h2>
+                    </div>
+                    <div class="map-actions">
+                        <button type="button" id="toggle-map-size" class="ghost-button">View Larger Map</button>
+                        <span id="risk-badge" class="risk-badge risk-neutral">Awaiting Input</span>
+                    </div>
+                </div>
+
+                <div class="map-board">
+                    <div class="map-grid"></div>
+                    <svg id="map-svg" class="map-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+                </div>
+
+                <div class="map-legend">
+                    <span><i class="legend-dot legend-low"></i>Low risk</span>
+                    <span><i class="legend-dot legend-medium"></i>Medium risk</span>
+                    <span><i class="legend-dot legend-high"></i>High risk</span>
+                    <span><i class="legend-dot legend-route"></i>Safe route</span>
+                </div>
+            </section>
+        </section>
+
+        <section class="intel-grid">
+            <article class="panel assessment-panel">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">Threat Assessment</p>
+                        <h2>Current trip status</h2>
+                    </div>
+                </div>
+
+                <div class="assessment-layout">
+                    <div class="gauge-card">
+                        <div class="gauge-shell">
+                            <div id="risk-gauge-fill" class="gauge-fill"></div>
+                            <div class="gauge-inner">
+                                <span class="gauge-label">Risk Score</span>
+                                <strong id="risk-score">-</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="assessment-copy">
+                        <div class="metric-stack">
+                            <span class="metric-label">Risk Level</span>
+                            <strong id="risk-level">Waiting</strong>
+                        </div>
+                        <p id="alert-text" class="alert-text">
+                            Alerts and travel warnings will appear here after route analysis.
+                        </p>
+                    </div>
+                </div>
+            </article>
+
+            <article class="panel hotspot-panel">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">Hotspot Feed</p>
+                        <h2>Highest monitored zones</h2>
+                    </div>
+                </div>
+
+                <ul id="hotspot-list" class="hotspot-list">
+                    <li class="placeholder-item">Loading hotspot zones...</li>
+                </ul>
+            </article>
+
+            <article class="panel heatmap-panel">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">Heatmap Bands</p>
+                        <h2>Area intensity view</h2>
+                    </div>
+                </div>
+
+                <div id="heatmap-bands" class="heatmap-bands">
+                    <div class="placeholder-item">Loading heat intensity bands...</div>
+                </div>
+            </article>
+
+            <article class="panel route-panel">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">Safe Route</p>
+                        <h2>Recommended movement path</h2>
+                    </div>
+                </div>
+
+                <ol id="safe-route" class="route-track">
+                    <li class="route-stop placeholder-stop">
+                        <span class="stop-index">1</span>
+                        <div>
+                            <strong>No route generated yet</strong>
+                            <p>Run analysis to generate a safer travel route.</p>
+                        </div>
+                    </li>
+                </ol>
+            </article>
+
+            <article class="panel urban-panel">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">Urban Intelligence</p>
+                        <h2>Dataset-backed route profile</h2>
+                    </div>
+                </div>
+
+                <div class="urban-summary-grid">
+                    <article class="comparison-card">
+                        <span class="metric-label">Route Incidents</span>
+                        <strong id="route-incident-total">-</strong>
+                        <p id="route-day-night-text">Day and night incident totals will appear here.</p>
+                    </article>
+                    <article class="comparison-card">
+                        <span class="metric-label">Crime Mix</span>
+                        <strong id="route-crime-focus">-</strong>
+                        <p id="route-crime-text">Dominant route crime patterns will appear here.</p>
+                    </article>
+                </div>
+
+                <div id="route-covered-areas" class="area-cloud">
+                    <span class="area-pill">Route-covered urban areas will appear here.</span>
+                </div>
+            </article>
+
+            <article class="panel algorithm-panel">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">AI Breakdown</p>
+                        <h2>Algorithm insight layer</h2>
+                    </div>
+                </div>
+
+                <div class="algorithm-cards">
+                    <article class="algorithm-card">
+                        <span class="metric-label">Bayesian Signal</span>
+                        <strong id="bayesian-score">-</strong>
+                        <p>Probability-style area threat estimate using route endpoints and time.</p>
+                    </article>
+                    <article class="algorithm-card">
+                        <span class="metric-label">KNN Signal</span>
+                        <strong id="knn-score">-</strong>
+                        <p>Neighbor-based safety score using linked nearby areas in the network.</p>
+                    </article>
+                    <article class="algorithm-card">
+                        <span class="metric-label">Decision Tree</span>
+                        <strong id="decision-tree-score">-</strong>
+                        <p id="decision-tree-detail">ML classifier prediction will appear after route analysis.</p>
+                    </article>
+                    <article class="algorithm-card">
+                        <span class="metric-label">Combined Score</span>
+                        <strong id="combined-score">-</strong>
+                        <p>Final average of Bayesian, KNN, and Decision Tree signals.</p>
+                    </article>
+                </div>
+            </article>
+
+            <article class="panel comparison-panel">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">Route Comparison</p>
+                        <h2>Why this route was selected</h2>
+                    </div>
+                </div>
+
+                <div class="comparison-grid">
+                    <article class="comparison-card">
+                        <span class="metric-label">Safe Route</span>
+                        <strong id="safe-route-steps">-</strong>
+                        <p id="safe-route-risk-text">Risk profile not generated yet.</p>
+                    </article>
+                    <article class="comparison-card">
+                        <span class="metric-label">Direct Route</span>
+                        <strong id="direct-route-steps">-</strong>
+                        <p id="direct-route-risk-text">Direct route comparison will appear here.</p>
+                    </article>
+                </div>
+
+                <ul id="route-rationale" class="advisory-list">
+                    <li>Route rationale will appear here after analysis.</li>
+                </ul>
+            </article>
+
+            <article class="panel recommendation-panel">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">Operator Guidance</p>
+                        <h2>Travel recommendations</h2>
+                    </div>
+                </div>
+
+                <ul id="recommendations" class="advisory-list">
+                    <li>Recommendations will appear here after route analysis.</li>
+                </ul>
+            </article>
+
+            <article class="panel network-panel">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">Coverage Zones</p>
+                        <h2>Supported urban areas</h2>
+                    </div>
+                </div>
+
+                <div id="supported-areas" class="area-cloud">
+                    <span class="area-pill">Loading areas...</span>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
